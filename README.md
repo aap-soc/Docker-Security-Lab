@@ -8,7 +8,7 @@ This lab demonstrates core containerisation skills using Docker Desktop on Windo
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Environment
-| Component |         Detail |
+|   Component    |         Detail                    |
 |----------------|-----------------------------------|
 | Host OS        |         Windows 11                |
 | Docker Desktop |          v4.98.0                  |
@@ -29,7 +29,7 @@ Downloaded the DVWA image from Docker Hub. Docker stores this locally so contain
 
 **Evidence:** `Status: Image is up to date for vulnerables/web-dvwa:latest`
 
-![Docker pull complete — image up to date](screenshots/01-docker-pull.png)
+![Docker pull complete — image up to date](Screenshots/image1-docker-pull.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ Initial attempt mapped the container to host port 80 (container name: `serene_lu
 
 > `ERR_CONNECTION_RESET - The connection was reset.`
 
-![ERR_CONNECTION_RESET on localhost port 80](screenshots/02-localhost-error.png)
+![ERR_CONNECTION_RESET on localhost port 80](Screenshots/image2-localhost-error.png)
 
 **Diagnosis step 1 — Check container logs:**
 ```bash
@@ -54,7 +54,7 @@ Output confirmed the container itself was healthy:
 
 This ruled out a container failure. The issue was at the host level — Windows or Edge's proxy settings were intercepting port 80 before it reached Docker.
 
-![docker logs serene_lumiere confirming MySQL and Apache running](screenshots/03-docker-logs.png)
+![docker logs serene_lumiere confirming MySQL and Apache running](Screenshots/image3-docker-logs.png)
 
 **Diagnosis step 2 — Test with curl:**
 ```bash
@@ -62,14 +62,14 @@ curl http://localhost:8080
 ```
 Returned a PowerShell error (`InvalidOperation: WebCmdletWebResponseException`) — because `curl` in Windows PowerShell is an alias for `Invoke-WebRequest`, not the real Unix curl binary. This confirmed the browser, not the container, was the issue.
 
-![curl command failing in PowerShell — alias not real curl](screenshots/04-curl-error.png)
+![curl command failing in PowerShell — alias not real curl](Screenshots/image4-curl-error.png)
 
 **Resolution:** Used `http://127.0.0.1:8080` in the browser instead of `http://localhost`. The loopback IP bypasses Edge's proxy settings and connects directly — DVWA loaded successfully.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-### 3. Resolution — Remap to Port 8080
+### 3. Resolution - Remap to Port 8080
 ```bash
 docker stop serene_lumiere
 docker run -d -p 8080:80 vulnerables/web-dvwa
@@ -82,7 +82,7 @@ docker run -d -p 8080:80 vulnerables/web-dvwa
 
 Stopped the original container and re-ran with port 8080 instead (container name: `gallant_pare`), avoiding the Windows port 80 reservation conflict.
 
-![docker pull and docker run — gallant_pare container created](screenshots/05-docker-run-8080.png)
+![docker pull and docker run — gallant_pare container created](Screenshots/image5-docker-run-8080.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ docker ps
 ```
 Confirmed container `gallant_pare` status: **Up**, with correct port mapping `0.0.0.0:8080->80/tcp`.
 
-![docker ps confirming gallant_pare running on port 8080](screenshots/06-docker-ps-8080.png)
+![docker ps confirming gallant_pare running on port 8080](Screenshots/image6-docker-ps-8080.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -103,7 +103,7 @@ Navigated to `http://127.0.0.1:8080` in Microsoft Edge.
 
 > **Note:** `localhost` was intercepted by Edge's proxy settings. Using `127.0.0.1` (the loopback address) bypassed this, demonstrating knowledge of IP addressing and loopback networking.
 
-![DVWA login page loading at 127.0.0.1:8080](screenshots/07-dvwa-login.png)
+![DVWA login page loading at 127.0.0.1:8080](Screenshots/image7-dvwa-login.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ Navigated to `http://127.0.0.1:8080` in Microsoft Edge.
 - Logged in: `admin` / `password`
 - Accessed full DVWA dashboard with vulnerability modules: SQL Injection, XSS, Brute Force, CSRF, Command Injection, File Upload, etc.
 
-![DVWA dashboard with full vulnerability module menu](screenshots/08-dvwa-dashboard.png)
+![DVWA dashboard with full vulnerability module menu](Screenshots/image8-dvwa-dashboard.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -126,7 +126,7 @@ docker stop gallant_pare
 ```
 Gracefully shut down the running container. Docker Desktop confirmed **No containers are running**.
 
-![docker stop gallant_pare — both containers now stopped](screenshots/09-container-stopped.png)
+![docker stop gallant_pare — both containers now stopped](Screenshots/image9-container-stopped.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ docker rm gallant_pare
 ```
 Deleted the container instance entirely. Only the original `serene_lumiere` (also stopped) remains in history.
 
-![docker rm gallant_pare — container removed](screenshots/10-container-removed.png)
+![docker rm gallant_pare — container removed](Screenshots/image10-container-removed.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -148,21 +148,21 @@ docker images
 ```
 Output confirmed `vulnerables/web-dvwa:latest` (935MB) still exists locally, demonstrating the key concept that **containers are temporary; images are persistent**. A new container can be spun up instantly from the same image at any time.
 
-![docker images — DVWA image still present after container removal](screenshots/11-docker-images.png)
+![docker images — DVWA image still present after container removal](Screenshots/image11-docker-images.png)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## Key Concepts Demonstrated
 
-| Concept | Applied |
-|---|---|
-| Container lifecycle | Pull → Run → Stop → Remove |
-| Port mapping | `-p 8080:80` host-to-container mapping |
-| Loopback networking | `127.0.0.1` vs `localhost` behaviour |
-| Container vs image | Image persists after container removal |
-| Log inspection | `docker logs` to verify internal services |
-| Containerised web app | DVWA running isolated from host system |
+|        Concept        |               Applied                     |
+|-----------------------|-------------------------------------------|
+| Container lifecycle   |    Pull → Run → Stop → Remove             |
+| Port mapping          | `-p 8080:80` host-to-container mapping    |
+| Loopback networking   | `127.0.0.1` vs `localhost` behaviour      |
+| Container vs image    | Image persists after container removal    |
+| Log inspection        | `docker logs` to verify internal services |
+| Containerised web app | DVWA running isolated from host system    |
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
