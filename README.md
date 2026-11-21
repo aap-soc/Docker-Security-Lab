@@ -1,9 +1,9 @@
 # Docker Security Lab - DVWA Containerisation
 
 ## Overview
-This lab demonstrates core containerisation skills using Docker Desktop on Windows. I deployed the **Damn Vulnerable Web Application (DVWA)** - a deliberately insecure PHP/MySQL web app used by security professionals to practice common web vulnerabilities in a safe, isolated environment.
+This lab demonstrates core containerisation skills using Docker Desktop on Windows. I deployed the **Damn Vulnerable Web Application (DVWA)** - a deliberately insecure PHP/MySQL web app used by security professionals to practice common web vulnerabilities in a safe, isolated environment. In the second part of this lab, I used DVWA to exploit and then detect two OWASP Top 10 vulnerabilities (SQL injection and XSS), linking the attack to what a SOC analyst would see in the web server logs
 
-**Skills demonstrated:** Docker image management, container lifecycle (run/stop/remove), port mapping, loopback networking, containerised web application deployment.
+**Skills demonstrated:** Docker image management, container lifecycle (run/stop/remove), port mapping, loopback networking, containerised web application deployment , OWASP Top 10 testing (SQL injection, XSS), and log-based attack detection.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -173,9 +173,64 @@ DVWA is used by security teams and SOC analysts to:
 - Test WAF (Web Application Firewall) rules in a safe environment
 - Train developers on secure coding practices
 
-Running it in Docker ensures complete isolation from the host — the vulnerable application cannot affect the underlying system.
+Running it in Docker ensures complete isolation from the host - the vulnerable application cannot affect the underlying system.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 10. Web Vulnerability Testing & Detection (OWASP Top 10)
+
+With DVWA running and security set to **Low**, I tested two of the most common web
+vulnerabilities, then confirmed the fix and found the attack in the server logs.
+
+> All testing was done against my own isolated container on `127.0.0.1`. DVWA is
+> built for this purpose; these techniques must never be used on systems you do
+> not own.
+
+| Attack | What I entered | What happened | Secure fix (at "Impossible") | OWASP Top 10 |
+|---|---|---|---|---|
+| SQL Injection | `1' OR '1'='1` in the User ID box | Returned **all** users instead of one - the input changed the database query | Prepared statements (input treated as data, not code) | A03: Injection |
+| Reflected XSS | `<script>alert('XSS')</script>` in the name box | Pop-up fired - the page ran my input as code, for this request only | Output encoding (`htmlspecialchars`) | A03: Injection |
+| Stored XSS | Same script saved in the guestbook | Pop-up fires on **every** page load, for every visitor - the script is stored in the database | Output encoding on display | A03: Injection |
+
+### SQL Injection
+![SQL injection returning all users](Screenshots/image12-sqli-injection.png)
+
+### Reflected XSS
+![Reflected XSS pop-up](Screenshots/image13-xss-reflected.png)
+
+### Stored XSS
+![Stored XSS pop-up](Screenshots/image14-xss-stored.png)
+
+### Detecting the attack in the logs (the SOC view)
+After attacking, I inspected the container's access log - the same place a SOC
+analyst would look:
+
+```bash
+docker ps                               # find the container name
+docker logs festive_lehmann --tail 30   # read the web access log
+```
+
+The injection attempts appear as URL-encoded payloads in the log:
+- **SQL injection:** `/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271` - `%27` is an
+  encoded apostrophe (`'`)
+- **Reflected XSS:** `/vulnerabilities/xss_r/?name=%3Cscript%3E` - `%3Cscript%3E` is
+  an encoded `<script>` tag
+
+![Attack payloads visible in the Docker access log](Screenshots/image15-logs-attack.png)
+
+> **Note:** the **stored XSS** does not appear in the URL, because it was sent as a
+> form submission (POST), not a GET request. A SOC analyst would need request-body
+> logging or a WAF to catch it — a useful reminder that URL monitoring alone is not
+> enough.
+
+**Why this matters:** `%27` and `%3Cscript%3E` are exactly the patterns a SIEM rule
+or Web Application Firewall (WAF) is written to flag. This lab shows both sides -
+how the attack is sent, and how it is detected in the logs.
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 ## Repository
