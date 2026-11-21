@@ -34,7 +34,7 @@ Downloaded the DVWA image from Docker Hub. Docker stores this locally so contain
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-### 2. First Run — Port 80 (Troubleshooting)
+### 2. First Run - Port 80 (Troubleshooting)
 ```bash
 docker run -d -p 80:80 vulnerables/web-dvwa
 ```
@@ -44,7 +44,7 @@ Initial attempt mapped the container to host port 80 (container name: `serene_lu
 
 ![ERR_CONNECTION_RESET on localhost port 80](Screenshots/image2-localhost-error.png)
 
-**Diagnosis step 1 — Check container logs:**
+**Diagnosis step 1 - Check container logs:**
 ```bash
 docker logs serene_lumiere
 ```
@@ -56,7 +56,7 @@ This ruled out a container failure. The issue was at the host level — Windows 
 
 ![docker logs serene_lumiere confirming MySQL and Apache running](Screenshots/image3-docker-logs.png)
 
-**Diagnosis step 2 — Test with curl:**
+**Diagnosis step 2 - Test with curl:**
 ```bash
 curl http://localhost:8080
 ```
